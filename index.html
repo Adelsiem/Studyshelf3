@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>StudyShelf — Mustapha Adeola Elsie</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+<div class="page-wrapper">
+
+  <!-- ═══ HEADER ═══ -->
+  <header class="site-header">
+    <div class="logo">📚 Study<span>Shelf</span></div>
+    <div class="owner-badge">
+      <div class="owner-name">Mustapha Adeola Elsie</div>
+      <div class="owner-matric">2023/12140</div>
+    </div>
+    <div class="header-right">
+      <div class="header-tag">PDF Repository</div>
+      <button class="btn-admin-lock" id="adminLockBtn" onclick="toggleAdminModal()" title="Admin login">🔒</button>
+    </div>
+  </header>
+
+  <!-- ═══ ADMIN LOGIN MODAL ═══ -->
+  <div class="modal-overlay" id="adminModal">
+    <div class="modal-box">
+      <div class="modal-head">
+        <h3>🔒 Admin Login</h3>
+        <button class="modal-close" onclick="closeAdminModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-hint">Enter your password to access upload and folder controls.</p>
+        <input type="password" id="adminPasswordInput" placeholder="Enter password"
+               onkeydown="if(event.key==='Enter') submitAdminPassword()"/>
+        <div id="adminError" class="admin-error" style="display:none">❌ Incorrect password. Try again.</div>
+        <button class="btn-modal-confirm" onclick="submitAdminPassword()">Unlock</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ NEW FOLDER MODAL ═══ -->
+  <div class="modal-overlay" id="folderModal">
+    <div class="modal-box">
+      <div class="modal-head">
+        <h3>📁 New Folder</h3>
+        <button class="modal-close" onclick="closeFolderModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-hint">Give your folder a name. You can upload PDFs into it afterwards.</p>
+        <input type="text" id="folderNameInput" placeholder="e.g. IFT 302 Materials"
+               onkeydown="if(event.key==='Enter') confirmNewFolder()"/>
+        <button class="btn-modal-confirm" onclick="confirmNewFolder()">Create Folder</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ RENAME FOLDER MODAL ═══ -->
+  <div class="modal-overlay" id="renameModal">
+    <div class="modal-box">
+      <div class="modal-head">
+        <h3>✏️ Rename Folder</h3>
+        <button class="modal-close" onclick="closeRenameModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-hint">Enter a new name for this folder.</p>
+        <input type="text" id="renameInput" placeholder="New folder name"
+               onkeydown="if(event.key==='Enter') confirmRename()"/>
+        <button class="btn-modal-confirm" onclick="confirmRename()">Rename</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ HERO ═══ -->
+  <div class="hero-strip">
+    <div class="hero-strip-inner">
+      <div>
+        <div class="hero-eyebrow">Document Management Dashboard</div>
+        <h1>Ingest, organise &amp;<br/><em>retrieve PDFs</em></h1>
+        <p>Upload PDFs into named folders. Files stay permanently. Visitors can browse and download freely.</p>
+      </div>
+      <div class="repo-counter">
+        <span class="count-num" id="heroCount">0</span>
+        <span class="count-label">PDFs stored</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ DASHBOARD ═══ -->
+  <div class="dashboard-wrap">
+    <div class="main-container">
+
+      <!-- LEFT PANEL — shown only to admin -->
+      <div class="panel-left" id="panelLeft">
+        <div class="panel-heading">
+          <div class="panel-heading-icon">📥</div>
+          <div><h2>Ingestion</h2><p>Upload PDFs · batch supported</p></div>
+        </div>
+
+        <div class="drop-zone" id="dropZone"
+             ondragover="onDragOver(event)" ondragleave="onDragLeave()" ondrop="onDrop(event)"
+             onclick="document.getElementById('fileInput').click()">
+          <input type="file" id="fileInput" accept="application/pdf" multiple
+                 onchange="previewFiles(this.files)"/>
+          <div class="drop-icon">📄</div>
+          <div class="drop-text">Drop PDFs here or <strong>click to browse</strong></div>
+        </div>
+
+        <div class="file-preview" id="filePreview">
+          <div id="filePreviewList"></div>
+        </div>
+
+        <!-- Folder selector -->
+        <div class="field">
+          <label for="folderSelect">Save to Folder</label>
+          <select id="folderSelect">
+            <option value="">📁 Root (no folder)</option>
+          </select>
+        </div>
+
+        <button class="btn-upload" id="uploadBtn" onclick="ingestFiles()">
+          ⬆ Ingest to Repository
+        </button>
+
+        <div class="progress-wrap" id="progressWrap">
+          <div class="progress-bar-bg"><div class="progress-bar" id="progressBar"></div></div>
+          <div class="progress-label" id="progressLabel">Saving…</div>
+        </div>
+
+        <div id="statusMessages"></div>
+
+        <div class="stats-grid">
+          <div class="stat-box"><div class="stat-val" id="statIngested">0</div><div class="stat-lbl">Ingested</div></div>
+          <div class="stat-box"><div class="stat-val" id="statFailed" style="color:#f87171">0</div><div class="stat-lbl">Rejected</div></div>
+          <div class="stat-box"><div class="stat-val" id="statTotal">0</div><div class="stat-lbl">Total</div></div>
+          <div class="stat-box"><div class="stat-val" id="statSize">0 KB</div><div class="stat-lbl">Stored</div></div>
+        </div>
+
+        <button class="btn-logout" onclick="logoutAdmin()">🔒 Lock Upload</button>
+      </div>
+
+      <!-- LOCKED PANEL — shown to visitors -->
+      <div class="panel-locked" id="panelLocked">
+        <div class="locked-icon">🔒</div>
+        <h3>Upload Restricted</h3>
+        <p>Only the owner can upload files and manage folders.<br/>You can browse and download freely.</p>
+        <button class="btn-modal-confirm" style="width:auto;padding:0.5rem 1.2rem;margin-top:0.5rem"
+                onclick="toggleAdminModal()">Admin Login</button>
+      </div>
+
+      <!-- RIGHT PANEL — repository -->
+      <div class="panel-right">
+        <div class="repo-toolbar">
+          <div class="panel-heading">
+            <div class="panel-heading-icon">🗂</div>
+            <div><h2>Repository</h2><p id="repoSubtitle">Browse folders &amp; files</p></div>
+          </div>
+          <div class="toolbar-btns">
+            <button class="btn-new-folder admin-only" id="newFolderBtn" onclick="openFolderModal()">📁 New Folder</button>
+            <button class="btn-clear admin-only" id="clearAllBtn" onclick="clearRepository()">🗑 Clear All</button>
+          </div>
+        </div>
+
+        <!-- Breadcrumb -->
+        <div class="breadcrumb" id="breadcrumb"></div>
+
+        <!-- Scrollable list -->
+        <ul id="repository">
+          <li class="repo-loading"><div class="spinner"></div><span>Loading…</span></li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- /page-wrapper -->
+
+<div class="toast" id="toast"></div>
+<script src="script.js"></script>
+</body>
+</html>
